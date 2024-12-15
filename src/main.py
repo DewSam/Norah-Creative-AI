@@ -1,5 +1,31 @@
 import streamlit as st
 from langchain_core.messages import AIMessage, HumanMessage
+from langchain.agents import initialize_agent
+from langchain_openai import ChatOpenAI
+from langchain.chains.conversation.memory import ConversationBufferWindowMemory
+from dotenv import load_dotenv, find_dotenv
+from tempfile import NamedTemporaryFile
+
+from tools import ImageCaptionTool , ImagePaletteTool
+
+
+# Load environment variables from .env file
+_ = load_dotenv(find_dotenv())
+
+##### Intitalize Tools ####
+caption_tool = ImageCaptionTool()
+palette_tool = ImagePaletteTool()
+
+##### Intitalize Agent ####
+tools = [caption_tool,palette_tool]
+conversational_memory = ConversationBufferWindowMemory(
+    memory_key= 'chat_history',
+    k= 5,
+    return_messages= True
+)
+
+llm = ChatOpenAI(model_name="gpt-4", temperature= 1)
+agent = initialize_agent( agent= "chat-conversational-react-description", tools= tools, llm = llm, memory =conversational_memory , verbose = True)
 
 
 # app config
@@ -40,9 +66,12 @@ if uploaded_file:
         with st.chat_message("Human"):
             st.markdown(user_query)
 
-        with st.chat_message("AI"):
-            response = "I'dont know!"
-            st.write(response)
+        with NamedTemporaryFile(dir = "./temp", delete = False) as f:
+            f.write(uploaded_file.getbuffer())
+            image_path = f.name
+            with st.chat_message("AI"):
+                response = agent.run(f"{user_query}, thid is the image path: {image_path}")
+                st.write(response)
         
         st.session_state.chat_history.append(AIMessage(content= response))
 
