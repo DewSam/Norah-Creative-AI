@@ -1,6 +1,7 @@
 import streamlit as st
 from langchain_core.messages import AIMessage, HumanMessage
-from langchain.agents import initialize_agent
+from langchain.agents import AgentExecutor, create_react_agent
+from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 from dotenv import load_dotenv, find_dotenv
@@ -17,16 +18,66 @@ caption_tool = ImageCaptionTool()
 palette_tool = ImagePaletteTool()
 
 ##### Intitalize Agent ####
+#tools
 tools = [caption_tool,palette_tool]
+
+#memmory
 conversational_memory = ConversationBufferWindowMemory(
     memory_key= 'chat_history',
     k= 5,
     return_messages= True
 )
 
-llm = ChatOpenAI(model_name="gpt-4", temperature= 1)
-agent = initialize_agent( agent= "chat-conversational-react-description", tools= tools, llm = llm, memory =conversational_memory , verbose = True)
+#prompt
+template = '''
+Your name is Norah,You are an artist with extensive experience in painting in different mediums and ages, you also like to help art students and enthusiasts to
+learn more about art. they might give you their reference image and your goal is to help them decompose the image to its core components
+and to get the color palette and search the internet for inspiration based on their reference image
 
+Answer the following questions as best you can and it is ok to be creative sometimes. You have access to the following tools:
+
+{tools}
+
+Make sure to Use the following format:
+
+Question: the input question you must answer
+Thought: you should always think about what to do
+Action: the action to take, should be one of [{tool_names}]
+Action Input: the input to the action
+Observation: the result of the action
+... (this Thought/Action/Action Input/Observation can repeat N times)
+Thought: I now know the final answer
+Final Answer: the final answer to the original input question
+
+Once you are asked about the color palette dont return RGB values convert the colors into their names like for [0,0,0] return Black and so on
+
+Begin!
+
+Question: {input}
+ImagePath: {image_path}
+Thought:{agent_scratchpad}'''
+
+prompt = PromptTemplate.from_template(template)
+
+
+#llm
+llm = ChatOpenAI(model_name="gpt-4", temperature= 0,  stop=["Final Answer:"])
+
+
+art_agent = create_react_agent(llm=llm,tools=tools,prompt=prompt)
+agent_executor = AgentExecutor(
+    agent=art_agent,
+    tools=tools,
+    verbose=True,
+    return_intermediate_steps=True,
+)
+
+
+
+#agent = initialize_agent( agent= "chat-conversational-react-description", tools= tools, llm = llm, memory =conversational_memory , verbose = True)
+#agent
+agent = create_react_agent(llm=llm, tools= tools, prompt=prompt)
+agent_executor = AgentExecutor(agent=agent, tools=tools,verbose=True)
 
 # app config
 st.set_page_config(page_title="Norah Chatbot", page_icon="🤖")
@@ -70,9 +121,9 @@ if uploaded_file:
             f.write(uploaded_file.getbuffer())
             image_path = f.name
             with st.chat_message("AI"):
-                response = agent.run(f"{user_query}, thid is the image path: {image_path}")
-                st.write(response)
+                response =  agent_executor.invoke({"input":user_query, "image_path": image_path})
+                st.write(response["output"])
         
-        st.session_state.chat_history.append(AIMessage(content= response))
+        st.session_state.chat_history.append(AIMessage(content= response["output"]))
 
 

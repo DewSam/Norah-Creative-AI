@@ -19,7 +19,7 @@ class ImageCaptionTool(BaseTool):
     name: str = "caption"
     description: str = "Use this tool to caption or describe an image. it will be given the path to the image as input, and it should return a simple caption describing the image."
     args_schema: Type[BaseModel] = ImageToolInput
-    return_direct: bool = True
+    return_direct: bool = False
 
     def _run(self, image_path: str) -> str:
         """Run the tool synchronously."""
@@ -56,11 +56,15 @@ class ImageCaptionTool(BaseTool):
 
 class ImagePaletteTool(BaseTool):
     name: str = "Palette"
-    description: str = "Use this tool to get the color palette of the image."\
-          "it will be given the path to the image as input, and it should return a list of color palette of the image in the formate [R,G,B]."\
-          "Don't return RGB, decode the RGB to color Name: like RGB(0,0,0) say it is black and so on make sure to be accurate as much as possible"
+    description: str = (
+        "Use this tool to get the color palette of an image. "
+        "The tool will return a list of RGB values representing the dominant colors in the image. "
+        "Your task is to convert these RGB values into descriptive color names (e.g., 'Black', 'White', 'Sky Blue'). "
+        "Make sure to include a markdown formatted list of the color names in your response."
+    )
+     
     args_schema: Type[BaseModel] = ImageToolInput
-    return_direct: bool = True
+    return_direct: bool = False
 
     def _run(self, image_path: str) -> str:
         """Run the tool synchronously."""
@@ -91,7 +95,7 @@ class ImagePaletteTool(BaseTool):
             palette = np.zeros((50, 50 * num_colors, 3), dtype=np.uint8)
 
             # Create a string with all dominant colors in RGB format
-            color_str = ", ".join([f"[{color[0]}, {color[1]}, {color[2]}]" for color in dominant_colors])
+            color_str = ", ".join([f"RGB({color[0]}, {color[1]}, {color[2]})" for color in dominant_colors])
 
             
             
