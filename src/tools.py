@@ -6,6 +6,8 @@ import cv2
 import numpy as np
 from sklearn.cluster import KMeans
 import matplotlib.image as mpimg
+import matplotlib.pyplot as plt
+import streamlit as st
 
 from PIL import Image, ImageOps
 import os
@@ -148,7 +150,7 @@ class ImagePaletteTool(BaseTool):
 
 class ImageGridTool(BaseTool):
     name: str = "grid"
-    description: str = "Use this tool to create grid over an image. it will be given the path to the image as input, and it should a path to the output image."
+    description: str = "Use this tool to create grid over an image. it will be given the path to the image as input, and it should a path to the output image, dont show the path only say that it successfully created the grid image."
     args_schema: Type[BaseModel] = ImageToolInput
     return_direct: bool = False
 
@@ -178,7 +180,8 @@ class ImageGridTool(BaseTool):
 
             # Save the figure to the specified output path
             plt.savefig(output_path, format='jpeg', bbox_inches='tight', dpi=300)
-           
+            st.image(output_path)
+            return output_path
         except FileNotFoundError:
             return "Error: Image file not found. Please check the file path."
         except Exception as e:
