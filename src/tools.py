@@ -1,17 +1,14 @@
-from langchain.tools import BaseTool, Tool, tool
-from typing import Optional, Type
+from langchain.tools import BaseTool, tool
+from typing import Type
 from pydantic import BaseModel, Field
-from PIL import Image
 from transformers import BlipProcessor, BlipForConditionalGeneration
-import os
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 
-
-from PIL import Image,  ImageOps
+from PIL import Image, ImageOps
 import os
+
 
 @tool
 def posterize_image(image_path: str, output_path: str = r"./temp", levels: int = 3) -> str:
@@ -33,15 +30,13 @@ def posterize_image(image_path: str, output_path: str = r"./temp", levels: int =
         image_path = "./temp/test.jpeg"
         # Open and posterize the image
         img = Image.open(image_path).convert("RGB")
-       # Posterize the image
+        # Posterize the image
         posterized_img = ImageOps.posterize(img, levels)
         posterized_img.save(output_file)
 
         return posterized_img
 
-
-    # Save the posterized image
-    
+        # Save the posterized image
 
         return f"Image saved to {output_file}"
     except FileNotFoundError:
@@ -49,11 +44,10 @@ def posterize_image(image_path: str, output_path: str = r"./temp", levels: int =
     except Exception as e:
         return f"Error: {str(e)}"
 
-    
 
+class ImageToolInput(BaseModel):
+    image_path: str = Field(description="Image path")
 
-class ImageToolInput(BaseModel): 
-    image_path: str = Field(description = "Image path")
 
 class ImageCaptionTool(BaseTool):
     name: str = "caption"
@@ -65,12 +59,12 @@ class ImageCaptionTool(BaseTool):
         """Run the tool synchronously."""
         try:
             # Load the image
-           
+
             raw_image = Image.open(image_path).convert('RGB')
-            
+
             # Device configuration
             device = "cpu"  # Change to "cuda" if a GPU is available
-            
+
             # Load the model and processor
             model_name = "Salesforce/blip-image-captioning-large"
             processor = BlipProcessor.from_pretrained(model_name)
@@ -81,13 +75,12 @@ class ImageCaptionTool(BaseTool):
             inputs = processor(raw_image, text, return_tensors="pt").to(device)
             out = model.generate(**inputs)
             caption = processor.decode(out[0], skip_special_tokens=True)
-            
+
             return caption
         except FileNotFoundError:
             return "Error: Image file not found. Please check the file path."
         except Exception as e:
             return f"Error: {str(e)}"
-            
 
     async def _arun(self, image_path: str) -> str:
         """Run the tool asynchronously (not implemented)."""
@@ -103,7 +96,7 @@ class ImagePaletteTool(BaseTool):
         "Return only the colors names don't mention the RGB values at all"
         "Make sure to include a markdown formatted list of the color names in your response."
     )
-     
+
     args_schema: Type[BaseModel] = ImageToolInput
     return_direct: bool = False
 
@@ -132,23 +125,19 @@ class ImagePaletteTool(BaseTool):
             # Get the cluster centers (dominant colors)
             dominant_colors = kmeans.cluster_centers_.astype(int)
 
-
             palette = np.zeros((50, 50 * num_colors, 3), dtype=np.uint8)
 
             # Create a string with all dominant colors in RGB format
             color_str = ", ".join([f"RGB({color[0]}, {color[1]}, {color[2]})" for color in dominant_colors])
 
-            
-            
             return color_str
-        
-            
+
+
 
         except FileNotFoundError:
             return "Error: Image file not found. Please check the file path."
         except Exception as e:
             return f"Error: {str(e)}"
-            
 
     async def _arun(self, image_path: str) -> str:
         """Run the tool asynchronously (not implemented)."""
