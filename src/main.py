@@ -10,8 +10,6 @@ from langchain.tools import tool
 from langchain.tools import Tool
 import requests
 import os
-import openai
-
 
 from tools import ImageCaptionTool , ImagePaletteTool, ImageGridTool , posterize_image
 
@@ -40,18 +38,29 @@ def google_image_search(query: str) -> list:
     """
     url = f"https://www.googleapis.com/customsearch/v1?q={query}&cx={GOOGLE_CSE_ID}&searchType=image&key={GOOGLE_API_KEY}"
 
-    #print(url)
+    # print(url)
     try:
         response = requests.get(url)
         response.raise_for_status()  # Raise HTTPError for bad responses (4xx and 5xx)
         data = response.json()
 
         if 'items' in data:
-            return [item['link'] for item in data['items']]
+            images = [item['link'] for item in data['items']]
+            # Loop through images and assign each to a column
+            num_columns = 3
+            # Generate columns dynamically
+            columns = st.columns(num_columns)
+            for index, url in enumerate(images):
+                # Select a column based on index
+                col = columns[index % num_columns]
+                # Display the image in the selected column
+                col.image(url, use_container_width=True)
+            return images
         else:
             return ["No images found."]
     except requests.exceptions.RequestException as e:
         return [f"Error: {str(e)}"]
+
 
 google_image_search_tool = Tool(
     name="GoogleImageSearch",
@@ -64,14 +73,14 @@ google_image_search_tool = Tool(
 #tools
 tools = [caption_tool,palette_tool,google_image_search_tool, posterize_tool,grid_tool]
 
-#memmory
+# memmory
 conversational_memory = ConversationBufferWindowMemory(
-    memory_key= 'chat_history',
-    k= 5,
-    return_messages= True
+    memory_key='chat_history',
+    k=5,
+    return_messages=True
 )
 
-#prompt
+# prompt
 template = '''
 Your name is Norah,You are an artist with extensive experience in painting in different mediums and ages, you also like to help art students and enthusiasts to
 learn more about art. they might give you their reference image and your goal is to help them decompose the image to its core components
@@ -97,8 +106,7 @@ Final Answer: the final answer to the original input question
 
 Note: Use the "GoogleImageSearch" tool to find images for artistic inspiration.
 If the users did not specified the painting type search for images of oil painting 
-Show the images retrived with some description if found, using markdown [!image]
-
+after running the tool please dont list the images, just mention that you found some images
 
 
 Begin!
@@ -109,48 +117,46 @@ Thought:{agent_scratchpad}'''
 
 prompt = PromptTemplate.from_template(template)
 
-
-#llm
-llm = ChatOpenAI(model_name="gpt-4", temperature= 0,  stop=["Final Answer:"])
+# llm
+llm = ChatOpenAI(model_name="gpt-4", temperature=0, stop=["Final Answer:"])
 
 ##### Intitalize Agent ####
-art_agent = create_react_agent(llm=llm,tools=tools,prompt=prompt)
+art_agent = create_react_agent(llm=llm, tools=tools, prompt=prompt)
 agent_executor = AgentExecutor(
     agent=art_agent,
     tools=tools,
     verbose=True,
     return_intermediate_steps=True,
-    #memory=conversational_memory  # Add memory here
-
+    # memory=conversational_memory  # Add memory here
 )
-
 # app config
 st.set_page_config(page_title="Norah Chatbot", page_icon="🤖")
 
-#set a title
+# set a title
 st.title("Norah - Your Creative AI Assistant")
 
-#set a header
+# set a header
 st.header("Hi I am Norah, Please upload your Reference Image to start!")
 
-#File
-uploaded_file = st.file_uploader("", type=["jpeg", "jpg", "png" ])
+# File
+uploaded_file = st.file_uploader("", type=["jpeg", "jpg", "png"])
 
 if uploaded_file:
-    #Display the image to the user
-    st.image(uploaded_file,caption="Uploaded Image", use_column_width= True)
+    # Display the image to the user
+    st.image(uploaded_file, caption="Uploaded Image", use_container_width=True)
 
-    #saved locally
-    f = NamedTemporaryFile(dir = "./temp", delete = False) 
+    # saved locally
+    f = NamedTemporaryFile(dir="./temp", delete=False)
     f.write(uploaded_file.getbuffer())
     image_path = f.name
     f.close()
 
     # session state
     if "chat_history" not in st.session_state:
-        st.session_state.chat_history = [ AIMessage(content="Hello, I am Norah, your AI Art Assistant. How can I help you?") ]
+        st.session_state.chat_history = [
+            AIMessage(content="Hello, I am Norah, your AI Art Assistant. How can I help you?")]
 
-    #conversation
+    # conversation
     for message in st.session_state.chat_history:
         if isinstance(message, AIMessage):
             with st.chat_message("AI"):
@@ -159,19 +165,17 @@ if uploaded_file:
             with st.chat_message("Human"):
                 st.write(message.content)
 
-
-    user_query= st.chat_input("Ask, ex, Can you share some painting of Van Gogh?")
+    user_query = st.chat_input("Ask anything! e.g. Can you share some painting of Van Gogh?")
 
     if user_query and user_query != "":
-        st.session_state.chat_history.append(HumanMessage(content= user_query))
+        st.session_state.chat_history.append(HumanMessage(content=user_query))
 
         with st.chat_message("Human"):
             st.markdown(user_query)
 
         with st.chat_message("AI"):
-            response =  agent_executor.invoke({"input":user_query, "image_path": image_path, "chat_history" : st.session_state.chat_history})
+            response = agent_executor.invoke(
+                {"input": user_query, "image_path": image_path, "chat_history": st.session_state.chat_history})
             st.write(response["output"])
-        
-        st.session_state.chat_history.append(AIMessage(content= response["output"]))
 
-
+        st.session_state.chat_history.append(AIMessage(content=response["output"]))
