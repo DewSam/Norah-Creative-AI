@@ -8,6 +8,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
+import matplotlib.image as mpimg
 
 
 from PIL import Image,  ImageOps
@@ -144,6 +145,51 @@ class ImagePaletteTool(BaseTool):
         
             
 
+        except FileNotFoundError:
+            return "Error: Image file not found. Please check the file path."
+        except Exception as e:
+            return f"Error: {str(e)}"
+            
+
+    async def _arun(self, image_path: str) -> str:
+        """Run the tool asynchronously (not implemented)."""
+        raise NotImplementedError("This tool does not support async execution.")
+    
+
+
+class ImageGridTool(BaseTool):
+    name: str = "grid"
+    description: str = "Use this tool to create grid over an image. it will be given the path to the image as input, and it should a path to the output image."
+    args_schema: Type[BaseModel] = ImageToolInput
+    return_direct: bool = False
+
+    def _run(self, image_path: str) -> str:
+        """Run the tool synchronously."""
+
+        output_path = "./temp/grid.jpeg"
+
+        try:
+            grid_size=(10, 10)
+            # Load the image
+            img = mpimg.imread(image_path)
+            h, w, _ = img.shape
+
+            # Create the figure and axis
+            fig, ax = plt.subplots()
+            ax.imshow(img)
+            ax.set_xticks(np.arange(0, w, w // grid_size[0]))
+            ax.set_yticks(np.arange(0, h, h // grid_size[1]))
+            
+            # Add gridlines
+            ax.grid(color='black', linestyle='--', linewidth=0.5)
+
+            # Turn off axis labels
+            ax.set_xticklabels([])
+            ax.set_yticklabels([])
+
+            # Save the figure to the specified output path
+            plt.savefig(output_path, format='jpeg', bbox_inches='tight', dpi=300)
+           
         except FileNotFoundError:
             return "Error: Image file not found. Please check the file path."
         except Exception as e:

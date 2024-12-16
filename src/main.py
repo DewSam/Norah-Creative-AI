@@ -13,7 +13,7 @@ import os
 import openai
 
 
-from tools import ImageCaptionTool , ImagePaletteTool, posterize_image
+from tools import ImageCaptionTool , ImagePaletteTool, ImageGridTool , posterize_image
 
 
 # Load environment variables from .env file
@@ -25,6 +25,7 @@ GOOGLE_CSE_ID = os.getenv("GOOGLE_CSE_ID")
 ##### Intitalize Tools ####
 caption_tool = ImageCaptionTool()
 palette_tool = ImagePaletteTool()
+grid_tool = ImageGridTool()
 
 posterize_tool = Tool(
     name="PosterizeImage",
@@ -61,7 +62,7 @@ google_image_search_tool = Tool(
 
 
 #tools
-tools = [caption_tool,palette_tool,google_image_search_tool, posterize_tool]
+tools = [caption_tool,palette_tool,google_image_search_tool, posterize_tool,grid_tool]
 
 #memmory
 conversational_memory = ConversationBufferWindowMemory(
@@ -96,8 +97,7 @@ Final Answer: the final answer to the original input question
 
 Note: Use the "GoogleImageSearch" tool to find images for artistic inspiration.
 If the users did not specified the painting type search for images of oil painting 
-Show only the link of the images retrived with some description if found
-
+Show the images retrived with some description if found, using markdown [!image]
 
 
 
