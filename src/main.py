@@ -11,7 +11,8 @@ from langchain.tools import Tool
 import requests
 import os
 
-from tools import ImageCaptionTool, ImagePaletteTool, posterize_image
+from tools import ImageCaptionTool , ImagePaletteTool, ImageGridTool , posterize_image
+
 
 # Load environment variables from .env file
 load_dotenv(find_dotenv())
@@ -22,6 +23,7 @@ GOOGLE_CSE_ID = os.getenv("GOOGLE_CSE_ID")
 ##### Intitalize Tools ####
 caption_tool = ImageCaptionTool()
 palette_tool = ImagePaletteTool()
+grid_tool = ImageGridTool()
 
 posterize_tool = Tool(
     name="PosterizeImage",
@@ -66,8 +68,10 @@ google_image_search_tool = Tool(
     description="Use this tool to search for images based on a query."
 )
 
-# tools
-tools = [caption_tool, palette_tool, google_image_search_tool, posterize_tool]
+
+
+#tools
+tools = [caption_tool,palette_tool,google_image_search_tool, posterize_tool,grid_tool]
 
 # memmory
 conversational_memory = ConversationBufferWindowMemory(
