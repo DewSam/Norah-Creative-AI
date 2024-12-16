@@ -6,20 +6,51 @@ from langchain_openai import ChatOpenAI
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 from dotenv import load_dotenv, find_dotenv
 from tempfile import NamedTemporaryFile
+from langchain.tools import tool
+from langchain.tools import Tool
+import requests
+import os
 
 from tools import ImageCaptionTool , ImagePaletteTool
 
 
 # Load environment variables from .env file
-_ = load_dotenv(find_dotenv())
+load_dotenv(find_dotenv())
+# Retrieve keys from environment variables
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+GOOGLE_CSE_ID = os.getenv("GOOGLE_CSE_ID")
 
 ##### Intitalize Tools ####
 caption_tool = ImageCaptionTool()
 palette_tool = ImagePaletteTool()
+@tool
+def google_image_search(query: str) -> list:
+    """Search for images using Google Custom Search API.
+    """
+    url = f"https://www.googleapis.com/customsearch/v1?q={query}&cx={GOOGLE_CSE_ID}&searchType=image&key={GOOGLE_API_KEY}"
 
-##### Intitalize Agent ####
+    #print(url)
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Raise HTTPError for bad responses (4xx and 5xx)
+        data = response.json()
+
+        if 'items' in data:
+            return [item['link'] for item in data['items']]
+        else:
+            return ["No images found."]
+    except requests.exceptions.RequestException as e:
+        return [f"Error: {str(e)}"]
+
+google_image_search_tool = Tool(
+    name="GoogleImageSearch",
+    func=google_image_search,
+    description="Use this tool to search for images based on a query."
+)
+
+
 #tools
-tools = [caption_tool,palette_tool]
+tools = [caption_tool,palette_tool,google_image_search_tool]
 
 #memmory
 conversational_memory = ConversationBufferWindowMemory(
@@ -33,6 +64,9 @@ template = '''
 Your name is Norah,You are an artist with extensive experience in painting in different mediums and ages, you also like to help art students and enthusiasts to
 learn more about art. they might give you their reference image and your goal is to help them decompose the image to its core components
 and to get the color palette and search the internet for inspiration based on their reference image
+
+here's the chat history: {chat_history}
+If the user did not ask you about the image directly, don't answer any questions about it and ignore the image path.
 
 Answer the following questions as best you can and it is ok to be creative sometimes. You have access to the following tools:
 
@@ -49,8 +83,8 @@ Observation: the result of the action
 Thought: I now know the final answer
 Final Answer: the final answer to the original input question
 
-Once you are asked about the color palette dont return RGB values convert the colors into their names like for [0,0,0] return Black and so on
-
+Note: Use the "GoogleImageSearch" tool to find images for artistic inspiration.
+Show only the link of the images retrived with some description if found
 Begin!
 
 Question: {input}
@@ -63,21 +97,16 @@ prompt = PromptTemplate.from_template(template)
 #llm
 llm = ChatOpenAI(model_name="gpt-4", temperature= 0,  stop=["Final Answer:"])
 
-
+##### Intitalize Agent ####
 art_agent = create_react_agent(llm=llm,tools=tools,prompt=prompt)
 agent_executor = AgentExecutor(
     agent=art_agent,
     tools=tools,
     verbose=True,
     return_intermediate_steps=True,
+    #memory=conversational_memory  # Add memory here
+
 )
-
-
-
-#agent = initialize_agent( agent= "chat-conversational-react-description", tools= tools, llm = llm, memory =conversational_memory , verbose = True)
-#agent
-agent = create_react_agent(llm=llm, tools= tools, prompt=prompt)
-agent_executor = AgentExecutor(agent=agent, tools=tools,verbose=True)
 
 # app config
 st.set_page_config(page_title="Norah Chatbot", page_icon="🤖")
@@ -121,7 +150,7 @@ if uploaded_file:
             f.write(uploaded_file.getbuffer())
             image_path = f.name
             with st.chat_message("AI"):
-                response =  agent_executor.invoke({"input":user_query, "image_path": image_path})
+                response =  agent_executor.invoke({"input":user_query, "image_path": image_path, "chat_history" : st.session_state.chat_history})
                 st.write(response["output"])
         
         st.session_state.chat_history.append(AIMessage(content= response["output"]))

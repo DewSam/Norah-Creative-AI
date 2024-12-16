@@ -4,12 +4,12 @@ from pydantic import BaseModel, Field
 from PIL import Image
 from transformers import BlipProcessor, BlipForConditionalGeneration
 import os
-
-
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
+
+
 
 
 class ImageToolInput(BaseModel): 
@@ -60,6 +60,7 @@ class ImagePaletteTool(BaseTool):
         "Use this tool to get the color palette of an image. "
         "The tool will return a list of RGB values representing the dominant colors in the image. "
         "Your task is to convert these RGB values into descriptive color names (e.g., 'Black', 'White', 'Sky Blue'). "
+        "Return only the colors names don't mention the RGB values at all"
         "Make sure to include a markdown formatted list of the color names in your response."
     )
      
@@ -82,7 +83,7 @@ class ImagePaletteTool(BaseTool):
             unique_colors = np.unique(pixels, axis=0)
 
             # Number of dominant colors to extract
-            num_colors = 12
+            num_colors = 5
 
             # Perform K-means clustering
             kmeans = KMeans(n_clusters=num_colors)
