@@ -1,4 +1,4 @@
-from langchain.tools import BaseTool
+from langchain.tools import BaseTool, Tool, tool
 from typing import Optional, Type
 from pydantic import BaseModel, Field
 from PIL import Image
@@ -10,6 +10,46 @@ import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 
 
+from PIL import Image,  ImageOps
+import os
+
+@tool
+def posterize_image(image_path: str, output_path: str = r"./temp", levels: int = 3) -> str:
+    """
+    Posterize the image so the artist can understand the basic image. 
+    Inputs:
+    - image_path: Path to the input image.
+    - output_path: Path to save the posterized image. Defaults to "./temp".
+    - levels: Number of posterization levels. Defaults to 50.
+    """
+    # Ensure output directory exists
+    os.makedirs(output_path, exist_ok=True)
+    output_file = os.path.join(output_path, "posterized.jpeg")
+
+    try:
+        print(f"Input Path: {image_path}")
+        print(f"Output Path: {output_file}")
+
+        image_path = "./temp/test.jpeg"
+        # Open and posterize the image
+        img = Image.open(image_path).convert("RGB")
+       # Posterize the image
+        posterized_img = ImageOps.posterize(img, levels)
+        posterized_img.save(output_file)
+
+        return posterized_img
+
+
+    # Save the posterized image
+    
+
+        return f"Image saved to {output_file}"
+    except FileNotFoundError:
+        return "Error: Image file not found. Please check the file path."
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+    
 
 
 class ImageToolInput(BaseModel): 

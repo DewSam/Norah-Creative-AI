@@ -10,8 +10,10 @@ from langchain.tools import tool
 from langchain.tools import Tool
 import requests
 import os
+import openai
 
-from tools import ImageCaptionTool , ImagePaletteTool
+
+from tools import ImageCaptionTool , ImagePaletteTool, posterize_image
 
 
 # Load environment variables from .env file
@@ -23,6 +25,14 @@ GOOGLE_CSE_ID = os.getenv("GOOGLE_CSE_ID")
 ##### Intitalize Tools ####
 caption_tool = ImageCaptionTool()
 palette_tool = ImagePaletteTool()
+
+posterize_tool = Tool(
+    name="PosterizeImage",
+    func=posterize_image,
+    description="Posterizes an image with a given number of levels and saves it to the specified path. Inputs: image_path, output_path, levels."
+)
+
+
 @tool
 def google_image_search(query: str) -> list:
     """Search for images using Google Custom Search API.
@@ -49,8 +59,9 @@ google_image_search_tool = Tool(
 )
 
 
+
 #tools
-tools = [caption_tool,palette_tool,google_image_search_tool]
+tools = [caption_tool,palette_tool,google_image_search_tool, posterize_tool]
 
 #memmory
 conversational_memory = ConversationBufferWindowMemory(
@@ -84,7 +95,12 @@ Thought: I now know the final answer
 Final Answer: the final answer to the original input question
 
 Note: Use the "GoogleImageSearch" tool to find images for artistic inspiration.
+If the users did not specified the painting type search for images of oil painting 
 Show only the link of the images retrived with some description if found
+
+
+
+
 Begin!
 
 Question: {input}
@@ -124,6 +140,12 @@ if uploaded_file:
     #Display the image to the user
     st.image(uploaded_file,caption="Uploaded Image", use_column_width= True)
 
+    #saved locally
+    f = NamedTemporaryFile(dir = "./temp", delete = False) 
+    f.write(uploaded_file.getbuffer())
+    image_path = f.name
+    f.close()
+
     # session state
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = [ AIMessage(content="Hello, I am Norah, your AI Art Assistant. How can I help you?") ]
@@ -138,7 +160,7 @@ if uploaded_file:
                 st.write(message.content)
 
 
-    user_query= st.chat_input("please Enter your query")
+    user_query= st.chat_input("Ask, ex, Can you share some painting of Van Gogh?")
 
     if user_query and user_query != "":
         st.session_state.chat_history.append(HumanMessage(content= user_query))
@@ -146,12 +168,9 @@ if uploaded_file:
         with st.chat_message("Human"):
             st.markdown(user_query)
 
-        with NamedTemporaryFile(dir = "./temp", delete = False) as f:
-            f.write(uploaded_file.getbuffer())
-            image_path = f.name
-            with st.chat_message("AI"):
-                response =  agent_executor.invoke({"input":user_query, "image_path": image_path, "chat_history" : st.session_state.chat_history})
-                st.write(response["output"])
+        with st.chat_message("AI"):
+            response =  agent_executor.invoke({"input":user_query, "image_path": image_path, "chat_history" : st.session_state.chat_history})
+            st.write(response["output"])
         
         st.session_state.chat_history.append(AIMessage(content= response["output"]))
 

@@ -56,6 +56,8 @@ if uploaded_file:
     buffered = io.BytesIO()
     image.save(buffered, format="PNG")
     img_base64 = base64.b64encode(buffered.getvalue()).decode()
+    # Create the Data URI
+    data_uri = f"data:image/png;base64,{img_base64}"
 
     # session state
     if "chat_history" not in st.session_state:
@@ -82,7 +84,7 @@ if uploaded_file:
 
         with st.chat_message("AI"):
             #response = get_response(user_query, st.session_state.chat_history)
-            response = st.write_stream(get_response(user_query,img_base64, st.session_state.chat_history))
+            response = st.write_stream(get_response(user_query,data_uri, st.session_state.chat_history))
 
             #response = "I dont know" 
             #st.write(response)
