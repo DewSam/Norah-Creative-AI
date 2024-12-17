@@ -61,6 +61,8 @@ Final Answer: the final answer to the original input question
 
 Note: Use the "GoogleImageSearch" tool to find images for artistic inspiration.
 If the users did not specified the painting type search for images of oil painting 
+Always search for artwork images like oil painting pieces but not actual images unless the user clearly specify
+Once asked about inspiration based on the reference image, use should first run the caption tool to understand the image then search for similar artwork
 after running the tool please dont list the images, just mention that you found some images
 
 
@@ -128,9 +130,10 @@ if uploaded_file:
         with st.chat_message("Human"):
             st.markdown(user_query)
 
-        with st.chat_message("AI"):
-            response = agent_executor.invoke(
+        with st.chat_message("AI"):  
+            with st.spinner(text = "Thinking..."):
+                response = agent_executor.invoke(
                 {"input": user_query, "image_path": image_path, "chat_history": st.session_state.chat_history})
-            st.write(response["output"])
+                st.write(response["output"])
 
         st.session_state.chat_history.append(AIMessage(content=response["output"]))

@@ -243,7 +243,7 @@ class GoogleImageSearchInput(BaseModel):
 
 class GoogleImageSearchTool(BaseTool):
     name: str = "google_image_search"
-    description: str = "Search for images using Google Custom Search API and display results in columns."
+    description: str = "Search for images using Google Custom Search API and display results in columns., your input should be a description of what you are searching for"
     #args_schema: Type[BaseModel] = GoogleImageSearchInput
     return_direct: bool = False
 
