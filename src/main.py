@@ -11,7 +11,7 @@ from langchain.tools import Tool
 import requests
 import os
 
-from tools import ImageCaptionTool , ImagePaletteTool, ImageGridTool , posterize_image
+from tools import ImageCaptionTool , ImagePaletteTool, ImageGridTool , ImagePosterizeTool, ImageBlackAndWhiteTool
 
 
 # Load environment variables from .env file
@@ -24,12 +24,8 @@ GOOGLE_CSE_ID = os.getenv("GOOGLE_CSE_ID")
 caption_tool = ImageCaptionTool()
 palette_tool = ImagePaletteTool()
 grid_tool = ImageGridTool()
-
-posterize_tool = Tool(
-    name="PosterizeImage",
-    func=posterize_image,
-    description="Posterizes an image with a given number of levels and saves it to the specified path. Inputs: image_path, output_path, levels."
-)
+posterize_tool = ImagePosterizeTool()
+BandW_tool = ImageBlackAndWhiteTool()
 
 
 @tool
@@ -54,7 +50,7 @@ def google_image_search(query: str) -> list:
                 # Select a column based on index
                 col = columns[index % num_columns]
                 # Display the image in the selected column
-                col.image(url, use_container_width=True)
+                col.image(url, use_column_width=True)
             return images
         else:
             return ["No images found."]
@@ -71,7 +67,7 @@ google_image_search_tool = Tool(
 
 
 #tools
-tools = [caption_tool,palette_tool,google_image_search_tool, posterize_tool,grid_tool]
+tools = [caption_tool,palette_tool,google_image_search_tool, posterize_tool,grid_tool,BandW_tool]
 
 # memmory
 conversational_memory = ConversationBufferWindowMemory(
@@ -143,7 +139,7 @@ uploaded_file = st.file_uploader("", type=["jpeg", "jpg", "png"])
 
 if uploaded_file:
     # Display the image to the user
-    st.image(uploaded_file, caption="Uploaded Image", use_container_width=True)
+    st.image(uploaded_file, caption="Uploaded Image", use_column_width=True)
 
     # saved locally
     f = NamedTemporaryFile(dir="./temp", delete=False)

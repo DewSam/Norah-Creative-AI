@@ -8,44 +8,8 @@ from sklearn.cluster import KMeans
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import streamlit as st
-
 from PIL import Image, ImageOps
-import os
 
-
-@tool
-def posterize_image(image_path: str, output_path: str = r"./temp", levels: int = 3) -> str:
-    """
-    Posterize the image so the artist can understand the basic image. 
-    Inputs:
-    - image_path: Path to the input image.
-    - output_path: Path to save the posterized image. Defaults to "./temp".
-    - levels: Number of posterization levels. Defaults to 50.
-    """
-    # Ensure output directory exists
-    os.makedirs(output_path, exist_ok=True)
-    output_file = os.path.join(output_path, "posterized.jpeg")
-
-    try:
-        print(f"Input Path: {image_path}")
-        print(f"Output Path: {output_file}")
-
-        image_path = "./temp/test.jpeg"
-        # Open and posterize the image
-        img = Image.open(image_path).convert("RGB")
-        # Posterize the image
-        posterized_img = ImageOps.posterize(img, levels)
-        posterized_img.save(output_file)
-
-        return posterized_img
-
-        # Save the posterized image
-
-        return f"Image saved to {output_file}"
-    except FileNotFoundError:
-        return "Error: Image file not found. Please check the file path."
-    except Exception as e:
-        return f"Error: {str(e)}"
 
 
 class ImageToolInput(BaseModel):
@@ -106,6 +70,7 @@ class ImagePaletteTool(BaseTool):
     def _run(self, image_path: str) -> str:
         """Run the tool synchronously."""
         try:
+            output_path = "./temp/palette.jpeg"
             # Load the image
             image = cv2.imread(image_path)
 
@@ -122,7 +87,7 @@ class ImagePaletteTool(BaseTool):
             num_colors = 5
 
             # Perform K-means clustering
-            kmeans = KMeans(n_clusters=num_colors)
+            kmeans = KMeans(n_clusters=num_colors, random_state=42)
             kmeans.fit(pixels)
 
             # Get the cluster centers (dominant colors)
@@ -130,6 +95,16 @@ class ImagePaletteTool(BaseTool):
 
             palette = np.zeros((50, 50 * num_colors, 3), dtype=np.uint8)
 
+            # Display the palette using matplotlib
+            palette = np.zeros((50, 300, 3), dtype=np.uint8)
+            step = 300 // num_colors
+            for i, color in enumerate(dominant_colors):
+                palette[:, i * step:(i + 1) * step] = color
+
+            # Save the palette image using PIL
+            palette_img = Image.fromarray(palette)
+            palette_img.save(output_path)
+            st.image(output_path)
             # Create a string with all dominant colors in RGB format
             color_str = ", ".join([f"RGB({color[0]}, {color[1]}, {color[2]})" for color in dominant_colors])
 
@@ -188,6 +163,68 @@ class ImageGridTool(BaseTool):
             return f"Error: {str(e)}"
             
 
+    async def _arun(self, image_path: str) -> str:
+        """Run the tool asynchronously (not implemented)."""
+        raise NotImplementedError("This tool does not support async execution.")
+    
+
+class ImagePosterizeTool(BaseTool):
+    name: str = "posterize"
+    description: str = "Use this tool to posterize an image. it will be given the path to the image as input, and it should a path to the output image, dont show the path only say that it successfully created the grid image."
+    args_schema: Type[BaseModel] = ImageToolInput
+    return_direct: bool = False
+
+    def _run(self, image_path: str) -> str:
+        """Run the tool synchronously."""
+
+        output_path = "./temp/posterized.jpeg"
+        levels =3
+
+        try:
+            # Open and posterize the image
+            img = Image.open(image_path).convert("RGB")
+            # Posterize the image
+            posterized_img = ImageOps.posterize(img, levels)
+            posterized_img.save(output_path)
+            st.image(output_path)
+            return output_path
+        
+        except FileNotFoundError:
+            return "Error: Image file not found. Please check the file path."
+        except Exception as e:
+            return f"Error: {str(e)}"
+            
+
+    async def _arun(self, image_path: str) -> str:
+        """Run the tool asynchronously (not implemented)."""
+        raise NotImplementedError("This tool does not support async execution.")
+
+
+class ImageBlackAndWhiteTool(BaseTool):
+    name: str = "black_and_white"
+    description: str = "Convert an image to black and white. Provide the image path as input, and it will save a black-and-white version of the image. It should return a success message, not the path."
+    args_schema: Type[BaseModel] = ImageToolInput
+    return_direct: bool = False
+
+    def _run(self, image_path: str) -> str:
+        """Run the tool synchronously."""
+        output_path = "./temp/black_and_white.jpeg"
+
+        try:
+            # Open the image
+            img = Image.open(image_path).convert("RGB")
+            # Convert the image to grayscale (black and white)
+            bw_img = ImageOps.grayscale(img)
+            # Save the black-and-white image
+            bw_img.save(output_path)
+            st.image(output_path, caption="Black and White Image")
+            return "Successfully created the black-and-white image."
+        
+        except FileNotFoundError:
+            return "Error: Image file not found. Please check the file path."
+        except Exception as e:
+            return f"Error: {str(e)}"
+    
     async def _arun(self, image_path: str) -> str:
         """Run the tool asynchronously (not implemented)."""
         raise NotImplementedError("This tool does not support async execution.")
