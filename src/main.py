@@ -95,6 +95,10 @@ st.title("Norah - Your Creative AI Assistant")
 # set a header
 st.header("Hi I am Norah, Please upload your Reference Image to start!")
 
+ # session state - Sodfa bas kawessa hhhh - just remove it if you like thelong chats
+if "chat_history" in st.session_state:
+    st.session_state.chat_history.clear()
+
 # File
 uploaded_file = st.file_uploader("", type=["jpeg", "jpg", "png"])
 
@@ -137,3 +141,5 @@ if uploaded_file:
                 st.write(response["output"])
 
         st.session_state.chat_history.append(AIMessage(content=response["output"]))
+
+
