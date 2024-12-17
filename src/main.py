@@ -11,14 +11,10 @@ from langchain.tools import Tool
 import requests
 import os
 
-from tools import ImageCaptionTool , ImagePaletteTool, ImageGridTool , ImagePosterizeTool, ImageBlackAndWhiteTool
+from tools import ImageCaptionTool , ImagePaletteTool, ImageGridTool , ImagePosterizeTool, ImageBlackAndWhiteTool, GoogleImageSearchTool
 
 
-# Load environment variables from .env file
-load_dotenv(find_dotenv())
-# Retrieve keys from environment variables
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-GOOGLE_CSE_ID = os.getenv("GOOGLE_CSE_ID")
+
 
 ##### Intitalize Tools ####
 caption_tool = ImageCaptionTool()
@@ -26,44 +22,7 @@ palette_tool = ImagePaletteTool()
 grid_tool = ImageGridTool()
 posterize_tool = ImagePosterizeTool()
 BandW_tool = ImageBlackAndWhiteTool()
-
-
-@tool
-def google_image_search(query: str) -> list:
-    """Search for images using Google Custom Search API.
-    """
-    url = f"https://www.googleapis.com/customsearch/v1?q={query}&cx={GOOGLE_CSE_ID}&searchType=image&key={GOOGLE_API_KEY}"
-
-    # print(url)
-    try:
-        response = requests.get(url)
-        response.raise_for_status()  # Raise HTTPError for bad responses (4xx and 5xx)
-        data = response.json()
-
-        if 'items' in data:
-            images = [item['link'] for item in data['items']]
-            # Loop through images and assign each to a column
-            num_columns = 3
-            # Generate columns dynamically
-            columns = st.columns(num_columns)
-            for index, url in enumerate(images):
-                # Select a column based on index
-                col = columns[index % num_columns]
-                # Display the image in the selected column
-                col.image(url, use_column_width=True)
-            return images
-        else:
-            return ["No images found."]
-    except requests.exceptions.RequestException as e:
-        return [f"Error: {str(e)}"]
-
-
-google_image_search_tool = Tool(
-    name="GoogleImageSearch",
-    func=google_image_search,
-    description="Use this tool to search for images based on a query."
-)
-
+google_image_search_tool = GoogleImageSearchTool()
 
 
 #tools

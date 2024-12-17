@@ -9,7 +9,16 @@ import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import streamlit as st
 from PIL import Image, ImageOps
+from typing import List
+import requests
+from dotenv import load_dotenv, find_dotenv
+import os
 
+# Load environment variables from .env file
+load_dotenv(find_dotenv())
+# Retrieve keys from environment variables
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+GOOGLE_CSE_ID = os.getenv("GOOGLE_CSE_ID")
 
 
 class ImageToolInput(BaseModel):
@@ -121,8 +130,6 @@ class ImagePaletteTool(BaseTool):
         """Run the tool asynchronously (not implemented)."""
         raise NotImplementedError("This tool does not support async execution.")
     
-
-
 class ImageGridTool(BaseTool):
     name: str = "grid"
     description: str = "Use this tool to create grid over an image. it will be given the path to the image as input, and it should a path to the output image, dont show the path only say that it successfully created the grid image."
@@ -226,5 +233,48 @@ class ImageBlackAndWhiteTool(BaseTool):
             return f"Error: {str(e)}"
     
     async def _arun(self, image_path: str) -> str:
+        """Run the tool asynchronously (not implemented)."""
+        raise NotImplementedError("This tool does not support async execution.")
+    
+
+class GoogleImageSearchInput(BaseModel):
+    query: str  # Search query string
+
+
+class GoogleImageSearchTool(BaseTool):
+    name: str = "google_image_search"
+    description: str = "Search for images using Google Custom Search API and display results in columns."
+    #args_schema: Type[BaseModel] = GoogleImageSearchInput
+    return_direct: bool = False
+
+    def _run(self, query: str) -> List[str]:
+        """Run the tool synchronously to search for images."""
+
+        url = f"https://www.googleapis.com/customsearch/v1?q={query}&cx={GOOGLE_CSE_ID}&searchType=image&key={GOOGLE_API_KEY}"
+
+        try:
+            # Make the API request
+            response = requests.get(url)
+            response.raise_for_status()  # Raise HTTPError for bad responses
+            data = response.json()
+
+            if 'items' in data:
+                images = [item['link'] for item in data['items']]
+
+                # Display images in Streamlit
+                num_columns = 3
+                columns = st.columns(num_columns)
+                for index, image_url in enumerate(images):
+                    col = columns[index % num_columns]
+                    col.image(image_url, use_column_width=True)
+
+                return images
+            else:
+                return ["No images found."]
+        
+        except requests.exceptions.RequestException as e:
+            return [f"Error: {str(e)}"]
+
+    async def _arun(self, query: str) -> List[str]:
         """Run the tool asynchronously (not implemented)."""
         raise NotImplementedError("This tool does not support async execution.")
