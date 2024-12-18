@@ -132,7 +132,7 @@ class ImagePaletteTool(BaseTool):
     
 class ImageGridTool(BaseTool):
     name: str = "grid"
-    description: str = "Use this tool to create grid over an image. it will be given the path to the image as input, and it should a path to the output image, dont show the path only say that it successfully created the grid image."
+    description: str = "Use this tool to create grid over an image. it will be given the path to the image as input, and it should a path to the output image, dont show the path only say that it successfully created the grid image. and explain how grid can help the learner in their art, give instructions on how to generate it in their physical canvas or paper"
     args_schema: Type[BaseModel] = ImageToolInput
     return_direct: bool = False
 
@@ -185,7 +185,7 @@ class ImagePosterizeTool(BaseTool):
         """Run the tool synchronously."""
 
         output_path = "./temp/posterized.jpeg"
-        levels =3
+        levels =2
 
         try:
             # Open and posterize the image
