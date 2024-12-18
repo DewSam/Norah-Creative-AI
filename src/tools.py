@@ -71,6 +71,8 @@ class ImagePaletteTool(BaseTool):
         "Your task is to convert these RGB values into descriptive color names (e.g., 'Black', 'White', 'Sky Blue'). "
         "Return only the colors names don't mention the RGB values at all"
         "Make sure to include a markdown formatted list of the color names in your response."
+        "Include on your response how can the user generate these colors using their fav medium, if they did not specify use oil painting as default"
+        "also mention the use of palette in painting"
     )
 
     args_schema: Type[BaseModel] = ImageToolInput
@@ -132,7 +134,11 @@ class ImagePaletteTool(BaseTool):
     
 class ImageGridTool(BaseTool):
     name: str = "grid"
-    description: str = "Use this tool to create grid over an image. it will be given the path to the image as input, and it should a path to the output image, dont show the path only say that it successfully created the grid image. and explain how grid can help the learner in their art, give instructions on how to generate it in their physical canvas or paper"
+    description: str = ("Use this tool to create grid over an image. it will be given the path to the image as input,"
+                        "and it should a path to the output image, dont show the path only say that it successfully created the grid image."
+                         "and explain how grid can help the learner in their art, give instructions on how to generate it in their physical canvas"
+                          " or paper")
+    
     args_schema: Type[BaseModel] = ImageToolInput
     return_direct: bool = False
 
@@ -162,7 +168,7 @@ class ImageGridTool(BaseTool):
 
             # Save the figure to the specified output path
             plt.savefig(output_path, format='jpeg', bbox_inches='tight', dpi=300)
-            st.image(output_path)
+            st.image(output_path, caption="Grid Image")
             return output_path
         except FileNotFoundError:
             return "Error: Image file not found. Please check the file path."
@@ -177,7 +183,10 @@ class ImageGridTool(BaseTool):
 
 class ImagePosterizeTool(BaseTool):
     name: str = "posterize"
-    description: str = "Use this tool to posterize an image. it will be given the path to the image as input, and it should a path to the output image, dont show the path only say that it successfully created the grid image."
+    description: str = ("Use this tool to posterize an image. it will be given the path to the image as input,"
+                        " and it should return a path to the output image, dont show the path only say that it "
+                        "successfully created the grid image."
+                        "Explain to the user how posterizing the image can help them in their painting")
     args_schema: Type[BaseModel] = ImageToolInput
     return_direct: bool = False
 
@@ -193,7 +202,7 @@ class ImagePosterizeTool(BaseTool):
             # Posterize the image
             posterized_img = ImageOps.posterize(img, levels)
             posterized_img.save(output_path)
-            st.image(output_path)
+            st.image(output_path, caption="Posterized Image")
             return output_path
         
         except FileNotFoundError:

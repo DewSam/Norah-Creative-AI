@@ -41,12 +41,15 @@ Your name is Norah,You are an artist with extensive experience in painting in di
 learn more about art. they might give you their reference image and your goal is to help them decompose the image to its core components
 and to get the color palette and search the internet for inspiration based on their reference image
 
-here's the chat history: {chat_history}
+
 If the user did not ask you about the image directly, don't answer any questions about it and ignore the image path.
 
 Answer the following questions as best you can and it is ok to be creative sometimes. You have access to the following tools:
 
 {tools}
+
+here's the chat history: {chat_history}
+
 
 Make sure to Use the following format:
 
@@ -65,6 +68,20 @@ Always search for artwork images like oil painting pieces but not actual images 
 Once asked about inspiration based on the reference image, use should first run the caption tool to understand the image then search for similar artwork
 after running the tool please dont list the images, just mention that you found some images
 
+if the user asked you for general plan do the following:
+1- search internet for inpiration
+2- make a grid over the image
+3- posterize the image
+4- make it black and white
+5- give guidlines and best practices of painting based on the reference image
+6- create the palette and give details how the colors can be generated using the chosen medium. (In oil painting use Tatinum White, etc)
+7- Finally give explanation for each  using markdown
+
+if the user asked you about certain artist:
+1- search the internet form some of his artwork based on your prior knowledge
+2- explain what distingueshs this artist artwork
+3- give brief dedscription about his/her background, artisitc style and life 
+4- use markdown
 
 Begin!
 
@@ -75,7 +92,7 @@ Thought:{agent_scratchpad}'''
 prompt = PromptTemplate.from_template(template)
 
 # llm
-llm = ChatOpenAI(model_name="gpt-4", temperature=0, stop=["Final Answer:"])
+llm = ChatOpenAI(model_name="gpt-4", temperature=0.7, stop=["Final Answer:"])
 
 ##### Intitalize Agent ####
 art_agent = create_react_agent(llm=llm, tools=tools, prompt=prompt)
@@ -95,9 +112,11 @@ st.title("Norah - Your Creative AI Assistant")
 # set a header
 st.header("Hi I am Norah, Please upload your Reference Image to start!")
 
+
+
  # session state - Sodfa bas kawessa hhhh - just remove it if you like thelong chats
-if "chat_history" in st.session_state:
-    st.session_state.chat_history.clear()
+#if "chat_history" in st.session_state:
+#    st.session_state.chat_history.clear()
 
 # File
 uploaded_file = st.file_uploader("", type=["jpeg", "jpg", "png"])
@@ -114,17 +133,20 @@ if uploaded_file:
 
     # session state
     if "chat_history" not in st.session_state:
-        st.session_state.chat_history = [
-            AIMessage(content="Hello, I am Norah, your AI Art Assistant. How can I help you?")]
+        st.session_state.chat_history = [ AIMessage (content = agent_executor.invoke(
+                {"input": "Say Hi, introduce yourself with details about what you can do and ask me how can i help you?", "image_path": image_path, "chat_history": []})["output"]) ]
+        if isinstance(st.session_state.chat_history[0], AIMessage):
+            with st.chat_message("AI"):
+                st.write(st.session_state.chat_history[0].content)
 
     # conversation
-    for message in st.session_state.chat_history:
-        if isinstance(message, AIMessage):
-            with st.chat_message("AI"):
-                st.write(message.content)
-        elif isinstance(message, HumanMessage):
-            with st.chat_message("Human"):
-                st.write(message.content)
+ #   for message in st.session_state.chat_history:
+ #       if isinstance(message, AIMessage):
+ #           with st.chat_message("AI"):
+ #               st.write(message.content)
+ #       elif isinstance(message, HumanMessage):
+ #           with st.chat_message("Human"):
+ #               st.write(message.content)
 
     user_query = st.chat_input("Ask anything! e.g. Can you share some painting of Van Gogh?")
 
