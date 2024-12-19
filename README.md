@@ -24,6 +24,25 @@ Norah AI is an innovative AI assistant tailored for artists, students, and art e
    ```bash
    pip install -r src/requirements.txt
    ```
+3. Install PyTorch:
+   - For Windows and macOS:
+     ```bash
+     pip3 install torch torchvision torchaudio
+     ```
+   - For Linux:
+     ```bash
+     pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+     ```
+   - For more installation options, visit the [PyTorch installation guide](https://pytorch.org/get-started/locally/).
+
+   ### Environment Variables
+Create a `.env` file in the root directory of the project and define the following API keys:
+
+```
+OPENAI_API_KEY=your_openai_api_key
+GOOGLE_API_KEY=your_google_api_key
+GOOGLE_CSE_ID=your_google_cse_id
+```
 
 ### Running the Application
 Start the application using Streamlit:
@@ -48,6 +67,11 @@ Norah AI/
 ├── README.md             # Project documentation
 └── .gitignore            # Git ignore rules
 ```
+
+## Notes
+- Ensure your `.env` file contains valid API keys.
+- The application relies on external APIs and requires an active internet connection.
+- Make sure to enable image search for Google CSE (https://programmablesearchengine.google.com/about/)
 
 ## License
 This project is licensed under the MIT License. See the `LICENSE` file for details.
