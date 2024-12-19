@@ -1,3 +1,4 @@
+from langchain.tools import BaseTool, tool
 from typing import Type
 from pydantic import BaseModel, Field
 from transformers import BlipProcessor, BlipForConditionalGeneration
@@ -34,7 +35,6 @@ class ImageCaptionTool(BaseTool):
         """Run the tool synchronously."""
         try:
             # Load the image
-
             raw_image = Image.open(image_path).convert('RGB')
 
             # Device configuration
@@ -114,7 +114,10 @@ class ImagePaletteTool(BaseTool):
             # Save the palette image using PIL
             palette_img = Image.fromarray(palette)
             palette_img.save(output_path)
+
+            #output the result in streamlit
             st.image(output_path)
+
             # Create a string with all dominant colors in RGB format
             color_str = ", ".join([f"RGB({color[0]}, {color[1]}, {color[2]})" for color in dominant_colors])
 
@@ -252,7 +255,6 @@ class GoogleImageSearchInput(BaseModel):
 class GoogleImageSearchTool(BaseTool):
     name: str = "google_image_search"
     description: str = "Search for images using Google Custom Search API and display results in columns., your input should be a description of what you are searching for"
-    #args_schema: Type[BaseModel] = GoogleImageSearchInput
     return_direct: bool = False
 
     def _run(self, query: str) -> List[str]:

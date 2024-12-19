@@ -3,15 +3,25 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langchain.agents import AgentExecutor, create_react_agent
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
-from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 from tempfile import NamedTemporaryFile
-
-
 from tools import ImageCaptionTool , ImagePaletteTool, ImageGridTool , ImagePosterizeTool, ImageBlackAndWhiteTool, GoogleImageSearchTool
+import os
+
+
+#Directory path
+directory_path = "./temp"
+
+# Check if the directory exists
+if not os.path.exists(directory_path):
+    # Create the directory
+    os.makedirs(directory_path)
+    print(f"Directory '{directory_path}' created successfully.")
+else:
+    print(f"Directory '{directory_path}' already exists.")
+
 
 
 ########## AGENT - LANGCHAIN ############
-
 
 ##### Intitalize Tools ####
 caption_tool = ImageCaptionTool()
@@ -114,7 +124,7 @@ if uploaded_file:
     st.image(uploaded_file, caption="Uploaded Image", use_column_width=True)
 
     # saved locally
-    f = NamedTemporaryFile(dir="./temp", delete=False)
+    f = NamedTemporaryFile(dir=directory_path, delete=False)
     f.write(uploaded_file.getbuffer())
     image_path = f.name
     f.close()
