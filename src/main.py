@@ -4,16 +4,13 @@ from langchain.agents import AgentExecutor, create_react_agent
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory
-from dotenv import load_dotenv, find_dotenv
 from tempfile import NamedTemporaryFile
-from langchain.tools import tool
-from langchain.tools import Tool
-import requests
-import os
+
 
 from tools import ImageCaptionTool , ImagePaletteTool, ImageGridTool , ImagePosterizeTool, ImageBlackAndWhiteTool, GoogleImageSearchTool
 
 
+########## AGENT - LANGCHAIN ############
 
 
 ##### Intitalize Tools ####
@@ -28,12 +25,6 @@ google_image_search_tool = GoogleImageSearchTool()
 #tools
 tools = [caption_tool,palette_tool,google_image_search_tool, posterize_tool,grid_tool,BandW_tool]
 
-# memmory
-conversational_memory = ConversationBufferWindowMemory(
-    memory_key='chat_history',
-    k=5,
-    return_messages=True
-)
 
 # prompt
 template = '''
@@ -80,7 +71,7 @@ if the user asked you for general plan do the following:
 if the user asked you about certain artist:
 1- search the internet form some of his artwork based on your prior knowledge
 2- explain what distingueshs this artist artwork
-3- give brief dedscription about his/her background, artisitc style and life 
+3- give brief description about his/her background, artisitc style and life 
 4- use markdown
 
 Begin!
@@ -88,6 +79,7 @@ Begin!
 Question: {input}
 ImagePath: {image_path}
 Thought:{agent_scratchpad}'''
+
 
 prompt = PromptTemplate.from_template(template)
 
@@ -101,8 +93,10 @@ agent_executor = AgentExecutor(
     tools=tools,
     verbose=True,
     return_intermediate_steps=True,
-    # memory=conversational_memory  # Add memory here
 )
+
+########## INTERFACE - STREAMLIT ###################
+
 # app config
 st.set_page_config(page_title="Norah Chatbot", page_icon="🤖")
 
@@ -111,12 +105,6 @@ st.title("Norah - Your Creative AI Assistant")
 
 # set a header
 st.header("Hi I am Norah, Please upload your Reference Image to start!")
-
-
-
- # session state - Sodfa bas kawessa hhhh - just remove it if you like thelong chats
-#if "chat_history" in st.session_state:
-#    st.session_state.chat_history.clear()
 
 # File
 uploaded_file = st.file_uploader("", type=["jpeg", "jpg", "png"])
@@ -139,16 +127,8 @@ if uploaded_file:
             with st.chat_message("AI"):
                 st.write(st.session_state.chat_history[0].content)
 
-    # conversation
- #   for message in st.session_state.chat_history:
- #       if isinstance(message, AIMessage):
- #           with st.chat_message("AI"):
- #               st.write(message.content)
- #       elif isinstance(message, HumanMessage):
- #           with st.chat_message("Human"):
- #               st.write(message.content)
 
-    user_query = st.chat_input("Ask anything! e.g. Can you share some painting of Van Gogh?")
+    user_query = st.chat_input("Ask anything! e.g. Who is Van Gogh?")
 
     if user_query and user_query != "":
         st.session_state.chat_history.append(HumanMessage(content=user_query))
